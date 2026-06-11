@@ -24,15 +24,15 @@
 <body>
 <script>
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxYvzqza3qTTW2v1hs14JT6MXcI62YhK6qj2_rmFTrUTsKqmE8VY8akweohGiUxOtZItg/exec';
+const QUALTRICS_URL = 'https://YOUR-QUALTRICS-LINK-HERE';
 
 const jsPsych = initJsPsych({
   on_finish: async function() {
-    document.getElementById('jspsych-content')?.remove();
     document.body.innerHTML = `<div class="saving-msg">⏳ שומר תוצאות... אנא המתן/י</div>`;
 
     const allTrials = jsPsych.data.get().filter({ phase: 'real' }).values();
     const rows = allTrials.map(t => ({
-      subject_id:  t.subject_id  || 'anonymous',
+      subject_id:  t.subject_id || 'anonymous',
       timestamp:   new Date().toISOString(),
       part:        t.part,
       rt_seconds:  t.rt ? (t.rt / 1000).toFixed(2) : null,
@@ -51,11 +51,7 @@ const jsPsych = initJsPsych({
       console.error('שגיאה בשמירה:', e);
     }
 
-    document.body.innerHTML = `
-      <div class="instruction-box" style="text-align:center;">
-        <h2>✅ תודה!</h2>
-        <p>תוצאותיך נשמרו בהצלחה.<br>ניתן להמשיך בשאלון.</p>
-      </div>`;
+    window.location.href = QUALTRICS_URL;
   }
 });
 
@@ -63,11 +59,23 @@ const subjectId = new URLSearchParams(window.location.search).get('subject_id') 
 jsPsych.data.addProperties({ subject_id: subjectId });
 
 function makeInstr(html) {
-  return { type: jsPsychHtmlButtonResponse, stimulus: html, choices: ['המשך'], button_html: '<button class="jspsych-btn">%choice%</button>' };
+  return {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: html,
+    choices: ['המשך'],
+    button_html: (choice) => `<button class="jspsych-btn">${choice}</button>`
+  };
 }
 
 function makeTmt(seq, prompt, phase, part) {
-  return { type: jsPsychTrailMaking, sequence: seq, show_clear_button: true, clear_button_label: 'נסה שוב', prompt: `<div style="font-size:17px;margin-bottom:12px;direction:rtl;">${prompt}</div>`, data: { phase, part } };
+  return {
+    type: jsPsychTrailMaking,
+    sequence: seq,
+    show_clear_button: true,
+    clear_button_label: 'נסה שוב',
+    prompt: `<div style="font-size:17px;margin-bottom:12px;direction:rtl;">${prompt}</div>`,
+    data: { phase, part }
+  };
 }
 
 const welcome = makeInstr(`<div class="instruction-box"><h2>מבחן חיבור עיגולים</h2><p>ברוך/ה הבא/ה למבחן.</p><p>המבחן מורכב משני חלקים:</p><p><b>חלק א׳</b> – חיבור מספרים לפי הסדר (1, 2, 3...)<br><b>חלק ב׳</b> – חיבור מספרים ואותיות עברית לסירוגין (1, א, 2, ב...)</p><p>לפני כל חלק יש <b>תרגול קצר</b> שיעזור לך להבין את המשימה.</p><p style="color:#c62828;">⏱ הזמן נמדד – פעל/י מהר ככל האפשר מבלי לטעות.</p></div>`);
