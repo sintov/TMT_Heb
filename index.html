@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://unpkg.com/jspsych@8.0.0/jspsych.js"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.0.0/index.js"></script>
+  <script src="https://unpkg.com/@jspsych-contrib/plugin-trail-making@1.0.0/index.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/jspsych@8.0.0/css/jspsych.css">
+</head>
+<body>
+<script>
+const script = document.createElement('script');
+script.src = "https://unpkg.com/@jspsych-contrib/plugin-trail-making";
+document.head.appendChild(script);
+
+script.onload = function() {
+  const jsPsych = initJsPsych({
+    on_finish: function() {
+      jsPsych.data.displayData();
+    }
+  });
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const subjectId = urlParams.get('subject_id') || 'anonymous';
+  jsPsych.data.addProperties({ subject_id: subjectId });
+
+  const rtlPrompt = (text) =>
+    `<div dir="rtl" style="margin-bottom: 20px; font-size: 18px;">${text}</div>`;
+
+  // ── הוראות כלליות ──
+  const welcome = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `<div dir="rtl" style="max-width:600px; margin:auto; font-size:18px; line-height:1.8;">
+      <h2>מבחן חיבור עיגולים</h2>
+      <p>במבחן זה תתבקש/י לחבר עיגולים לפי סדר מסוים, בהקלקה מהירה ככל האפשר.</p>
+      <p>ישנם שני חלקים: חלק א' – מספרים בלבד, חלק ב' – מספרים ואותיות בעברית לסירוגין.</p>
+      <p>לפני כל חלק תהיה תרגול קצר.</p>
+    </div>`,
+    choices: ['המשך'],
+    button_html: '<button class="jspsych-btn" dir="rtl">%choice%</button>'
+  };
+
+  // ══════════════════════════════════════
+  // חלק א' – מספרים בלבד
+  // ══════════════════════════════════════
+
+  const instructions_a_practice = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: rtlPrompt(`<b>חלק א' – תרגול</b><br><br>
+      חבר/י את המספרים לפי הסדר: 1 ← 2 ← 3 ← ...<br>
+      התחל/י מהמספר 1 והמשך/י לפי הסדר עד לסוף.<br>
+      פעל/י מהר ככל האפשר מבלי לטעות!`),
+    choices: ['התחל תרגול'],
+    button_html: '<button class="jspsych-btn" dir="rtl">%choice%</button>'
+  };
+
+  const tmt_a_practice = {
+    type: jsPsychTrailMaking,
+    sequence: ['1', '2', '3', '4', '5'],
+    show_clear_button: true,
+    clear_button_label: 'נסה שוב',
+    prompt: rtlPrompt('תרגול – חבר/י את המספרים לפי הסדר'),
+    data: { phase: 'practice', part: 'A' }
+  };
+
+  const instructions_a_real = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: rtlPrompt(`<b>חלק א' – מבחן אמיתי</b><br><br>
+      כעת תתחיל/י את המבחן האמיתי.<br>
+      חבר/י את המספרים לפי הסדר מ-1 עד הסוף, בהקלקה מהירה ככל האפשר.<br>
+      הזמן מתחיל מרגע ההתחלה!`),
+    choices: ['התחל מבחן'],
+    button_html: '<button class="jspsych-btn" dir="rtl">%choice%</button>'
+  };
+
+  const tmt_a_real = {
+    type: jsPsychTrailMaking,
+    sequence: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25'],
+    show_clear_button: true,
+    clear_button_label: 'נסה שוב',
+    prompt: rtlPrompt('חבר/י את המספרים לפי הסדר (1 ← 2 ← 3 ← ...)'),
+    data: { phase: 'real', part: 'A' }
+  };
+
+  // ══════════════════════════════════════
+  // חלק ב' – מספרים ואותיות עברית לסירוגין
+  // ══════════════════════════════════════
+
+  const instructions_b_practice = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: rtlPrompt(`<b>חלק ב' – תרגול</b><br><br>
+      כעת חבר/י מספרים <b>ואותיות עברית</b> לסירוגין:<br>
+      1 ← א ← 2 ← ב ← 3 ← ג ← ...<br>
+      יש לסירוגין בין מספר לאות, מספר לאות וכן הלאה.<br>
+      פעל/י מהר ככל האפשר מבלי לטעות!`),
+    choices: ['התחל תרגול'],
+    button_html: '<button class="jspsych-btn" dir="rtl">%choice%</button>'
+  };
+
+  const tmt_b_practice = {
+    type: jsPsychTrailMaking,
+    sequence: ['1','א','2','ב','3','ג','4','ד'],
+    show_clear_button: true,
+    clear_button_label: 'נסה שוב',
+    prompt: rtlPrompt('תרגול – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...'),
+    data: { phase: 'practice', part: 'B' }
+  };
+
+  const instructions_b_real = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: rtlPrompt(`<b>חלק ב' – מבחן אמיתי</b><br><br>
+      כעת תתחיל/י את המבחן האמיתי.<br>
+      חבר/י לסירוגין: 1 ← א ← 2 ← ב ← 3 ← ג ← ...<br>
+      הזמן מתחיל מרגע ההתחלה!`),
+    choices: ['התחל מבחן'],
+    button_html: '<button class="jspsych-btn" dir="rtl">%choice%</button>'
+  };
+
+  const tmt_b_real = {
+    type: jsPsychTrailMaking,
+    sequence: ['1','א','2','ב','3','ג','4','ד','5','ה','6','ו','7','ז','8','ח','9','ט','10','י','11','כ','12','ל','13','מ'],
+    show_clear_button: true,
+    clear_button_label: 'נסה שוב',
+    prompt: rtlPrompt('חבר/י לסירוגין: 1 ← א ← 2 ← ב ← 3 ← ג ← ...'),
+    data: { phase: 'real', part: 'B' }
+  };
+
+  // ── סיום ──
+  const end_screen = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: rtlPrompt('<b>תודה!</b><br><br>המבחן הסתיים. תוצאותיך נשמרו.'),
+    choices: ['סיום'],
+    button_html: '<button class="jspsych-btn" dir="rtl">%choice%</button>'
+  };
+
+  jsPsych.run([
+    welcome,
+    instructions_a_practice,
+    tmt_a_practice,
+    instructions_a_real,
+    tmt_a_real,
+    instructions_b_practice,
+    tmt_b_practice,
+    instructions_b_real,
+    tmt_b_real,
+    end_screen
+  ]);
+};</script>
+</body>
+</html>
