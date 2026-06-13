@@ -10,7 +10,8 @@
   <link rel="stylesheet" href="https://unpkg.com/jspsych@8.0.0/css/jspsych.css">
   <style>
     body { background: #f0f4f8; font-family: 'Segoe UI', Arial, sans-serif; direction: rtl; }
-    .jspsych-display-element { direction: rtl; }
+    .jspsych-display-element { direction: ltr; }
+    canvas { -webkit-tap-highlight-color: transparent; }
     .instruction-box { background: white; border-radius: 16px; padding: 40px; max-width: 640px; margin: 40px auto; box-shadow: 0 4px 24px rgba(0,0,0,0.10); text-align: right; direction: rtl; }
     .instruction-box h2 { color: #1a237e; font-size: 26px; margin-bottom: 16px; }
     .instruction-box p { font-size: 17px; line-height: 1.8; color: #333; }
@@ -19,11 +20,37 @@
     .jspsych-btn { background: #1a237e !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 14px 40px !important; font-size: 17px !important; cursor: pointer !important; margin-top: 10px !important; transition: background 0.2s !important; }
     .jspsych-btn:hover { background: #283593 !important; }
     .saving-msg { text-align: center; font-size: 20px; margin-top: 60px; color: #1a237e; }
+    .jspsych-trail-making-circle[data-label="A"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="A"]::after { content: "א"; }
+    .jspsych-trail-making-circle[data-label="B"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="B"]::after { content: "ב"; }
+    .jspsych-trail-making-circle[data-label="C"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="C"]::after { content: "ג"; }
+    .jspsych-trail-making-circle[data-label="D"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="D"]::after { content: "ד"; }
+    .jspsych-trail-making-circle[data-label="E"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="E"]::after { content: "ה"; }
+    .jspsych-trail-making-circle[data-label="F"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="F"]::after { content: "ו"; }
+    .jspsych-trail-making-circle[data-label="G"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="G"]::after { content: "ז"; }
+    .jspsych-trail-making-circle[data-label="H"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="H"]::after { content: "ח"; }
+    .jspsych-trail-making-circle[data-label="I"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="I"]::after { content: "ט"; }
+    .jspsych-trail-making-circle[data-label="J"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="J"]::after { content: "י"; }
+    .jspsych-trail-making-circle[data-label="K"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="K"]::after { content: "כ"; }
+    .jspsych-trail-making-circle[data-label="L"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="L"]::after { content: "ל"; }
+    .jspsych-trail-making-circle[data-label="M"] span { visibility: hidden; }
+    .jspsych-trail-making-circle[data-label="M"]::after { content: "מ"; }
   </style>
 </head>
 <body>
 <script>
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxYvzqza3qTTW2v1hs14JT6MXcI62YhK6qj2_rmFTrUTsKqmE8VY8akweohGiUxOtZItg/exec';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwjTGVngWvjR4A5zORQKan2YonCTxuiSxK728qGNBERyxChuyU1K6lbj9NJz3jDpJdkHw/exec'
 const QUALTRICS_URL = 'https://YOUR-QUALTRICS-LINK-HERE';
 
 const jsPsych = initJsPsych({
@@ -44,7 +71,7 @@ const jsPsych = initJsPsych({
       await fetch(SHEET_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ rows })
       });
     } catch(e) {
@@ -67,26 +94,55 @@ function makeInstr(html) {
   };
 }
 
-function makeTmt(seq, prompt, phase, part) {
-  return {
+// יצירת מיקומים אקראיים ללא חפיפה
+function randomPositions(n, w, h, r, minDist) {
+  const pts = [];
+  let tries = 0;
+  while (pts.length < n && tries < 20000) {
+    const x = r + 10 + Math.random() * (w - 2*r - 20);
+    const y = r + 10 + Math.random() * (h - 2*r - 20);
+    if (!pts.some(p => Math.hypot(p.x-x, p.y-y) < minDist)) pts.push({x, y});
+    tries++;
+  }
+  return pts;
+}
+
+// בניית targets לחלק ב' עם אותיות עבריות
+function buildBTargets(numPairs) {
+  const heb = ['א','ב','ג','ד','ה','ו','ז','ח','ט','י','כ','ל','מ'];
+  const labels = [];
+  for (let i = 0; i < numPairs; i++) {
+    labels.push(String(i+1));
+    labels.push(heb[i]);
+  }
+  const pos = randomPositions(labels.length, 600, 600, 30, 85);
+  return labels.map((label, i) => ({ x: pos[i].x, y: pos[i].y, label }));
+}
+
+function makeTmt(num, type, prompt, phase, part, customTargets) {
+  const trial = {
     type: jsPsychTrailMaking,
-    sequence: seq,
-    show_clear_button: true,
-    clear_button_label: 'נסה שוב',
-    prompt: `<div style="font-size:17px;margin-bottom:12px;direction:rtl;">${prompt}</div>`,
+    prompt: `<p style="font-size:17px;text-align:center;margin:10px 0;">${prompt}</p>`,
     data: { phase, part }
   };
+  if (customTargets) {
+    trial.targets = customTargets;
+  } else {
+    trial.num_targets = num;
+    trial.test_type = type;
+  }
+  return trial;
 }
 
 const welcome = makeInstr(`<div class="instruction-box"><h2>מבחן חיבור עיגולים</h2><p>ברוך/ה הבא/ה למבחן.</p><p>המבחן מורכב משני חלקים:</p><p><b>חלק א׳</b> – חיבור מספרים לפי הסדר (1, 2, 3...)<br><b>חלק ב׳</b> – חיבור מספרים ואותיות עברית לסירוגין (1, א, 2, ב...)</p><p>לפני כל חלק יש <b>תרגול קצר</b> שיעזור לך להבין את המשימה.</p><p style="color:#c62828;">⏱ הזמן נמדד – פעל/י מהר ככל האפשר מבלי לטעות.</p></div>`);
-const instrAPractice = makeInstr(`<div class="instruction-box"><span class="badge">חלק א׳ – תרגול</span><h2>חיבור מספרים</h2><p>לחץ/י על המספרים <b>לפי הסדר</b> מהקטן לגדול:</p><div class="example">1 ← 2 ← 3 ← 4 ← 5</div><p>התחל/י מ-<b>1</b> וסיים/י בגבוה ביותר.</p><p>אם טעית – לחץ/י <b>"נסה שוב"</b> להתחלה מחדש.</p></div>`);
-const tmtAPractice = makeTmt(['1','2','3','4','5'], 'תרגול א׳ – חבר/י את המספרים לפי הסדר', 'practice', 'A');
+const instrAPractice = makeInstr(`<div class="instruction-box"><span class="badge">חלק א׳ – תרגול</span><h2>חיבור מספרים</h2><p>לחץ/י על המספרים <b>לפי הסדר</b> מהקטן לגדול:</p><div class="example">1 ← 2 ← 3 ← 4 ← 5</div><p>התחל/י מ-<b>1</b> וסיים/י בגבוה ביותר.</p></div>`);
+const tmtAPractice = makeTmt(5, 'A', 'תרגול א׳ – חבר/י את המספרים לפי הסדר', 'practice', 'A');
 const instrAReal = makeInstr(`<div class="instruction-box"><span class="badge">חלק א׳ – מבחן אמיתי</span><h2>חיבור מספרים</h2><p>כעת תתחיל/י את המבחן האמיתי – <b>25 מספרים</b>.</p><p>חבר/י את המספרים לפי הסדר מ-1 עד 25.</p><div class="example">1 ← 2 ← 3 ← ... ← 25</div><p style="color:#c62828;">⏱ הזמן יימדד מרגע שתלחץ/י "המשך".</p></div>`);
-const tmtAReal = makeTmt(['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25'], 'חלק א׳ – חבר/י מספרים לפי הסדר (1 ← 2 ← ... ← 25)', 'real', 'A');
-const instrBPractice = makeInstr(`<div class="instruction-box"><span class="badge">חלק ב׳ – תרגול</span><h2>חיבור מספרים ואותיות לסירוגין</h2><p>כעת יש לחבר <b>מספר ואחריו אות עברית</b> לסירוגין:</p><div class="example">1 ← א ← 2 ← ב ← 3 ← ג ← 4 ← ד</div><p>הסדר הוא: <b>מספר → אות → מספר → אות...</b></p><p>אם טעית – לחץ/י <b>"נסה שוב"</b>.</p></div>`);
-const tmtBPractice = makeTmt(['1','א','2','ב','3','ג','4','ד'], 'תרגול ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'practice', 'B');
+const tmtAReal = makeTmt(25, 'A', 'חלק א׳ – חבר/י מספרים לפי הסדר (1 ← 2 ← ... ← 25)', 'real', 'A');
+const instrBPractice = makeInstr(`<div class="instruction-box"><span class="badge">חלק ב׳ – תרגול</span><h2>חיבור מספרים ואותיות לסירוגין</h2><p>כעת יש לחבר <b>מספר ואחריו אות עברית</b> לסירוגין:</p><div class="example">1 ← א ← 2 ← ב ← 3 ← ג ← 4 ← ד</div><p>הסדר הוא: <b>מספר → אות → מספר → אות...</b></p></div>`);
+const tmtBPractice = makeTmt(null, null, 'תרגול ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'practice', 'B', buildBTargets(4));
 const instrBReal = makeInstr(`<div class="instruction-box"><span class="badge">חלק ב׳ – מבחן אמיתי</span><h2>חיבור מספרים ואותיות לסירוגין</h2><p>כעת תתחיל/י את המבחן האמיתי.</p><div class="example">1 ← א ← 2 ← ב ← 3 ← ג ← ...</div><p>המשך/י עד לסוף הרצף.</p><p style="color:#c62828;">⏱ הזמן יימדד מרגע שתלחץ/י "המשך".</p></div>`);
-const tmtBReal = makeTmt(['1','א','2','ב','3','ג','4','ד','5','ה','6','ו','7','ז','8','ח','9','ט','10','י','11','כ','12','ל','13','מ'], 'חלק ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'real', 'B');
+const tmtBReal = makeTmt(null, null, 'חלק ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'real', 'B', buildBTargets(13));
 
 jsPsych.run([welcome, instrAPractice, tmtAPractice, instrAReal, tmtAReal, instrBPractice, tmtBPractice, instrBReal, tmtBReal]);
 </script>
