@@ -97,6 +97,43 @@
     .feedback-msg { font-size: 20px; }
 
     .saving-msg { text-align: center; font-size: 20px; margin-top: 80px; color: #1a237e; }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      .instruction-box {
+        padding: 20px 14px; margin: 10px auto;
+        width: calc(100% - 20px); box-sizing: border-box;
+      }
+      .instruction-box h2 { font-size: 18px; }
+      .instruction-box p  { font-size: 14px; }
+
+      .trial-page { padding: 10px 6px; }
+
+      .target-box {
+        width: 72px; height: 72px;
+        font-size: 40px; margin-bottom: 12px;
+      }
+      .target-box svg { width: 38px !important; height: 38px !important; }
+
+      .grid-wrap { padding: 10px 6px; margin-bottom: 14px; }
+      .grid-table td { width: 30vw; max-width: 90px; height: 50px; padding: 2px; }
+      .grid-table td svg { width: 36px !important; height: 36px !important; }
+      .grid-table td.num-cell { font-size: 18px; height: 30px; }
+
+      .choices-wrap { gap: 14px; }
+      .jspsych-btn {
+        width: 64px !important; height: 64px !important;
+        font-size: 22px !important; border-radius: 10px !important;
+      }
+
+      .progress-wrap { width: 98%; }
+    }
+
+    /* Prevent horizontal overflow */
+    body { overflow-x: hidden; }
+    .jspsych-display-element { padding: 0 !important; }
+    .jspsych-content-wrapper { width: 100% !important; }
+    .jspsych-content { max-width: 100% !important; padding: 6px !important; }
   </style>
 </head>
 <body>
@@ -271,11 +308,14 @@ const jsPsych = initJsPsych({
   on_finish: async function() {
     document.body.innerHTML = `<div class="saving-msg">⏳ שומר תוצאות... אנא המתן/י</div>`;
 
-    const real     = jsPsych.data.get().filter({ phase: 'real' }).values();
-    const correct  = real.filter(t => t.correct).length;
-    const total    = real.length;
-    const avgRt    = (real.reduce((s,t) => s + t.rt, 0) / total / 1000).toFixed(3);
-    const accuracy = ((correct / total) * 100).toFixed(1);
+    const real       = jsPsych.data.get().filter({ phase: 'real' }).values();
+    const total      = real.length;
+    const numCorrect = real.filter(t => t.correct).length;
+    const numErrors  = total - numCorrect;
+    const totalRtMs  = real.reduce((s, t) => s + (t.rt || 0), 0);
+    const avgRtSec   = total ? (totalRtMs / total / 1000).toFixed(3) : null;
+    const totalRtSec = (totalRtMs / 1000).toFixed(2);
+    const accuracy   = total ? ((numCorrect / total) * 100).toFixed(1) : 0;
 
     const israelTime = new Date().toLocaleString('he-IL', {
       timeZone: 'Asia/Jerusalem',
@@ -283,30 +323,17 @@ const jsPsych = initJsPsych({
       hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
 
-    const rows = real.map(t => ({
-      subject_id:   t.subject_id || 'anonymous',
-      timestamp:    israelTime,
-      test:         'symbol_matching',
-      symbol:       t.symbol,       // letter key (A/B/C etc), not SVG
-      correct_col:  t.correct_col,
-      response_col: t.response_col,
-      correct:      t.correct ? 1 : 0,
-      rt_ms:        Math.round(t.rt),
-      rt_seconds:   t.rt_sec
-    }));
-
-    // summary row
-    rows.push({
-      subject_id:   real[0]?.subject_id || 'anonymous',
-      timestamp:    israelTime,
-      test:         'SUMMARY',
-      symbol:       '',
-      correct_col:  correct + '/' + total,
-      response_col: accuracy + '%',
-      correct:      '',
-      rt_ms:        '',
-      rt_seconds:   avgRt
-    });
+    // Save only one summary row per participant
+    const rows = [{
+      subject_id:    real[0]?.subject_id || 'anonymous',
+      timestamp:     israelTime,
+      total_trials:  total,
+      num_correct:   numCorrect,
+      num_errors:    numErrors,
+      accuracy_pct:  accuracy,
+      avg_rt_seconds: avgRtSec,
+      total_rt_seconds: totalRtSec
+    }];
 
     try {
       await fetch(SHEET_URL, {
