@@ -16,9 +16,9 @@
       touch-action: none;
     }
     /* Make jsPsych content fill screen on mobile */
-    .jspsych-display-element { padding: 0 !important; margin: 0 !important; }
-    .jspsych-content-wrapper { width: 100% !important; margin: 0 !important; padding: 0 !important; }
-    .jspsych-content { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+    .jspsych-display-element { padding: 0 !important; }
+    .jspsych-content-wrapper { width: 100% !important; }
+    .jspsych-content { max-width: 100% !important; padding: 4px !important; }
     .jspsych-display-element canvas { display: block; margin: 0 auto; }
 
     .instruction-box {
@@ -161,9 +161,9 @@ function randomPositions(n, w, h, r, minDist) {
 
 // חישוב גודל קנבס מתאים למסך
 function canvasSize() {
-  // Use clientWidth to exclude scrollbar; subtract safe margin for any browser chrome
   const w = document.documentElement.clientWidth || window.innerWidth;
-  return Math.min(w - 8, 600);
+  // On mobile use 92% of screen; on desktop cap at 600px
+  return w < 640 ? Math.floor(w * 0.92) : 600;
 }
 
 // בניית targets לחלק ב' עם אותיות עבריות
