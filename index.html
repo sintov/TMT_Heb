@@ -51,21 +51,34 @@
 <body>
 <script>
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwjTGVngWvjR4A5zORQKan2YonCTxuiSxK728qGNBERyxChuyU1K6lbj9NJz3jDpJdkHw/exec'
-const QUALTRICS_URL = 'https://YOUR-QUALTRICS-LINK-HERE';
+const NEXT_TEST_URL = 'https://sintov.github.io/symbol_matching/index.html'; // ← URL של מבחן הסמלים
 
 const jsPsych = initJsPsych({
   on_finish: async function() {
     document.body.innerHTML = `<div class="saving-msg">⏳ שומר תוצאות... אנא המתן/י</div>`;
 
     const allTrials = jsPsych.data.get().filter({ phase: 'real' }).values();
-    const rows = allTrials.map(t => ({
-      subject_id:  t.subject_id || 'anonymous',
-      timestamp:   new Date().toISOString(),
-      part:        t.part,
-      rt_seconds:  t.rt ? (t.rt / 1000).toFixed(2) : null,
-      errors:      t.errors ?? 0,
-      raw:         JSON.stringify(t)
-    }));
+    const israelTime = new Date().toLocaleString('he-IL', {
+      timeZone: 'Asia/Jerusalem',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    const rows = allTrials.map(t => {
+      // הפלאגין שומר זמן ב-ms – מחשבים לשניות ולדקות
+      const rtMs    = t.rt ?? t.time_elapsed ?? null;
+      const rtSec   = rtMs ? (rtMs / 1000).toFixed(2) : null;
+      const rtMin   = rtMs ? (rtMs / 60000).toFixed(2) : null;
+      return {
+        subject_id:   t.subject_id || 'anonymous',
+        timestamp:    israelTime,
+        part:         t.part,
+        rt_ms:        rtMs,
+        rt_seconds:   rtSec,
+        rt_minutes:   rtMin,
+        errors:       t.errors ?? 0,
+        raw:          JSON.stringify(t)
+      };
+    });
 
     try {
       await fetch(SHEET_URL, {
@@ -78,7 +91,7 @@ const jsPsych = initJsPsych({
       console.error('שגיאה בשמירה:', e);
     }
 
-    window.location.href = QUALTRICS_URL;
+    window.location.href = NEXT_TEST_URL + '?subject_id=' + (subjectId || 'anonymous');
   }
 });
 
