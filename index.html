@@ -185,10 +185,10 @@ function makeTmt(num, type, prompt, phase, part, customTargets) {
   const sz = canvasSize();
   const trial = {
     type: jsPsychTrailMaking,
-    canvas_size: [sz, sz],
     prompt: `<p style="font-size:17px;text-align:center;margin:10px 0;">${prompt}</p>`,
     data: { phase, part }
   };
+  trial.canvas_size = [sz, sz];
   if (customTargets) {
     trial.targets = customTargets;
   } else {
