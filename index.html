@@ -149,7 +149,7 @@ function makeInstr(html) {
 function randomPositions(n, w, h, r, minDist) {
   const pts = [];
   let tries = 0;
-  const margin = r + 18;
+  const margin = r + 22;
   while (pts.length < n && tries < 20000) {
     const x = margin + Math.random() * (w - 2*margin);
     const y = margin + Math.random() * (h - 2*margin);
@@ -160,10 +160,11 @@ function randomPositions(n, w, h, r, minDist) {
 }
 
 // חישוב גודל קנבס מתאים למסך
+// jsPsych wraps content in a 95%-wide container with padding,
+// so we take 88% of viewport to stay safely inside on all devices.
 function canvasSize() {
   const w = document.documentElement.clientWidth || window.innerWidth;
-  // On mobile use 92% of screen; on desktop cap at 600px
-  return w < 640 ? Math.floor(w * 0.92) : 600;
+  return Math.min(Math.floor(w * 0.88), 600);
 }
 
 // בניית targets לחלק ב' עם אותיות עבריות
@@ -176,7 +177,7 @@ function buildBTargets(numPairs) {
   }
   const sz = canvasSize();
   const minDist = Math.max(60, sz * 0.13);
-  const pos = randomPositions(labels.length, sz, sz, 28, minDist);
+  const pos = randomPositions(labels.length, sz, sz, 26, minDist);
   return labels.map((label, i) => ({ x: pos[i].x, y: pos[i].y, label }));
 }
 
