@@ -148,9 +148,10 @@ function makeInstr(html) {
 function randomPositions(n, w, h, r, minDist) {
   const pts = [];
   let tries = 0;
+  const margin = r + 18;
   while (pts.length < n && tries < 20000) {
-    const x = r + 10 + Math.random() * (w - 2*r - 20);
-    const y = r + 10 + Math.random() * (h - 2*r - 20);
+    const x = margin + Math.random() * (w - 2*margin);
+    const y = margin + Math.random() * (h - 2*margin);
     if (!pts.some(p => Math.hypot(p.x-x, p.y-y) < minDist)) pts.push({x, y});
     tries++;
   }
@@ -159,7 +160,7 @@ function randomPositions(n, w, h, r, minDist) {
 
 // חישוב גודל קנבס מתאים למסך
 function canvasSize() {
-  return Math.min(window.innerWidth - 16, 600);
+  return Math.min(window.innerWidth - 32, 600);
 }
 
 // בניית targets לחלק ב' עם אותיות עבריות
