@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>מבחן חיבור עיגולים</title>
   <script src="https://unpkg.com/jspsych@8.0.0/dist/index.browser.min.js"></script>
   <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.0.0/dist/index.browser.min.js"></script>
@@ -15,7 +15,6 @@
       -webkit-tap-highlight-color: transparent;
       touch-action: none;
     }
-    /* Make jsPsych content fill screen on mobile */
     .jspsych-display-element { padding: 0 !important; }
     .jspsych-content-wrapper { width: 100% !important; }
     .jspsych-content { max-width: 100% !important; padding: 4px !important; }
@@ -103,7 +102,6 @@ const jsPsych = initJsPsych({
       hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
     const rows = allTrials.map(t => {
-      // plugin saves completion_time (ms) and num_errors
       const rtMs  = t.completion_time ?? null;
       const rtSec = rtMs ? (rtMs / 1000).toFixed(2) : null;
       const rtMin = rtMs ? (rtMs / 60000).toFixed(2) : null;
@@ -145,29 +143,53 @@ function makeInstr(html) {
   };
 }
 
-// יצירת מיקומים אקראיים ללא חפיפה
-function randomPositions(n, w, h, r, minDist) {
-  const pts = [];
-  let tries = 0;
-  const margin = r + 22;
-  while (pts.length < n && tries < 20000) {
-    const x = margin + Math.random() * (w - 2*margin);
-    const y = margin + Math.random() * (h - 2*margin);
-    if (!pts.some(p => Math.hypot(p.x-x, p.y-y) < minDist)) pts.push({x, y});
-    tries++;
+function getCanvasDimensions() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const cw = Math.min(Math.floor(w * 0.95), 800);
+  const ch = Math.min(Math.floor(h * 0.65), 800); // 65% מהגובה כדי להשאיר מקום להוראות למעלה
+  return [cw, ch];
+}
+
+function randomPositions(n, w, h, r) {
+  let pts = [];
+  let currentMinDist = Math.max(40, Math.min(w, h) * 0.12); 
+  const margin = r + 15;
+  
+  while (currentMinDist > 5) {
+    pts = [];
+    let tries = 0;
+    while (pts.length < n && tries < 5000) {
+      const x = margin + Math.random() * (w - 2*margin);
+      const y = margin + Math.random() * (h - 2*margin);
+      if (!pts.some(p => Math.hypot(p.x-x, p.y-y) < currentMinDist)) {
+        pts.push({x, y});
+      }
+      tries++;
+    }
+    if (pts.length === n) return pts; 
+    currentMinDist -= 5; 
+  }
+  
+  while (pts.length < n) {
+     pts.push({
+       x: margin + Math.random() * (w - 2*margin),
+       y: margin + Math.random() * (h - 2*margin)
+     });
   }
   return pts;
 }
 
-// חישוב גודל קנבס מתאים למסך
-// jsPsych wraps content in a 95%-wide container with padding,
-// so we take 88% of viewport to stay safely inside on all devices.
-function canvasSize() {
-  const w = document.documentElement.clientWidth || window.innerWidth;
-  return Math.min(Math.floor(w * 0.88), 600);
+function buildATargets(numTargets) {
+  const labels = [];
+  for (let i = 1; i <= numTargets; i++) {
+    labels.push(String(i));
+  }
+  const [cw, ch] = getCanvasDimensions();
+  const pos = randomPositions(labels.length, cw, ch, 20);
+  return labels.map((label, i) => ({ x: pos[i].x, y: pos[i].y, label }));
 }
 
-// בניית targets לחלק ב' עם אותיות עבריות
 function buildBTargets(numPairs) {
   const heb = ['א','ב','ג','ד','ה','ו','ז','ח','ט','י','כ','ל','מ'];
   const labels = [];
@@ -175,38 +197,31 @@ function buildBTargets(numPairs) {
     labels.push(String(i+1));
     labels.push(heb[i]);
   }
-  const sz = canvasSize();
-  const minDist = Math.max(60, sz * 0.13);
-  const pos = randomPositions(labels.length, sz, sz, 26, minDist);
+  const [cw, ch] = getCanvasDimensions();
+  const pos = randomPositions(labels.length, cw, ch, 20);
   return labels.map((label, i) => ({ x: pos[i].x, y: pos[i].y, label }));
 }
 
-function makeTmt(num, type, prompt, phase, part, customTargets) {
-  const sz = canvasSize();
-  const trial = {
+function makeTmt(prompt, phase, part, customTargets) {
+  const [cw, ch] = getCanvasDimensions();
+  return {
     type: jsPsychTrailMaking,
     prompt: `<p style="font-size:17px;text-align:center;margin:10px 0;">${prompt}</p>`,
+    canvas_size: [cw, ch],
+    targets: customTargets,
     data: { phase, part }
   };
-  trial.canvas_size = [sz, sz];
-  if (customTargets) {
-    trial.targets = customTargets;
-  } else {
-    trial.num_targets = num;
-    trial.test_type = type;
-  }
-  return trial;
 }
 
 const welcome = makeInstr(`<div class="instruction-box"><h2>מבחן חיבור עיגולים</h2><p>ברוך/ה הבא/ה למבחן.</p><p>המבחן מורכב משני חלקים:</p><p><b>חלק א׳</b> – חיבור מספרים לפי הסדר (1, 2, 3...)<br><b>חלק ב׳</b> – חיבור מספרים ואותיות עברית לסירוגין (1, א, 2, ב...)</p><p>לפני כל חלק יש <b>תרגול קצר</b> שיעזור לך להבין את המשימה.</p><p style="color:#c62828;">⏱ הזמן נמדד – פעל/י מהר ככל האפשר מבלי לטעות.</p></div>`);
 const instrAPractice = makeInstr(`<div class="instruction-box"><span class="badge">חלק א׳ – תרגול</span><h2>חיבור מספרים</h2><p>לחץ/י על המספרים <b>לפי הסדר</b> מהקטן לגדול:</p><div class="example">1 ← 2 ← 3 ← 4 ← 5</div><p>התחל/י מ-<b>1</b> וסיים/י בגבוה ביותר.</p></div>`);
-const tmtAPractice = makeTmt(5, 'A', 'תרגול א׳ – חבר/י את המספרים לפי הסדר', 'practice', 'A');
+const tmtAPractice = makeTmt('תרגול א׳ – חבר/י את המספרים לפי הסדר', 'practice', 'A', buildATargets(5));
 const instrAReal = makeInstr(`<div class="instruction-box"><span class="badge">חלק א׳ – מבחן אמיתי</span><h2>חיבור מספרים</h2><p>כעת תתחיל/י את המבחן האמיתי – <b>25 מספרים</b>.</p><p>חבר/י את המספרים לפי הסדר מ-1 עד 25.</p><div class="example">1 ← 2 ← 3 ← ... ← 25</div><p style="color:#c62828;">⏱ הזמן יימדד מרגע שתלחץ/י "המשך".</p></div>`);
-const tmtAReal = makeTmt(25, 'A', 'חלק א׳ – חבר/י מספרים לפי הסדר (1 ← 2 ← ... ← 25)', 'real', 'A');
+const tmtAReal = makeTmt('חלק א׳ – חבר/י מספרים לפי הסדר (1 ← 2 ← ... ← 25)', 'real', 'A', buildATargets(25));
 const instrBPractice = makeInstr(`<div class="instruction-box"><span class="badge">חלק ב׳ – תרגול</span><h2>חיבור מספרים ואותיות לסירוגין</h2><p>כעת יש לחבר <b>מספר ואחריו אות עברית</b> לסירוגין:</p><div class="example">1 ← א ← 2 ← ב ← 3 ← ג ← 4 ← ד</div><p>הסדר הוא: <b>מספר → אות → מספר → אות...</b></p></div>`);
-const tmtBPractice = makeTmt(null, null, 'תרגול ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'practice', 'B', buildBTargets(4));
+const tmtBPractice = makeTmt('תרגול ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'practice', 'B', buildBTargets(4));
 const instrBReal = makeInstr(`<div class="instruction-box"><span class="badge">חלק ב׳ – מבחן אמיתי</span><h2>חיבור מספרים ואותיות לסירוגין</h2><p>כעת תתחיל/י את המבחן האמיתי.</p><div class="example">1 ← א ← 2 ← ב ← 3 ← ג ← ...</div><p>המשך/י עד לסוף הרצף.</p><p style="color:#c62828;">⏱ הזמן יימדד מרגע שתלחץ/י "המשך".</p></div>`);
-const tmtBReal = makeTmt(null, null, 'חלק ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'real', 'B', buildBTargets(13));
+const tmtBReal = makeTmt('חלק ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'real', 'B', buildBTargets(13));
 
 jsPsych.run([welcome, instrAPractice, tmtAPractice, instrAReal, tmtAReal, instrBPractice, tmtBPractice, instrBReal, tmtBReal]);
 </script>
