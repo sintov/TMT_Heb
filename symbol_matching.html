@@ -27,8 +27,8 @@
     /* ── Trial layout ── */
     .trial-page {
       display: flex; flex-direction: column;
-      align-items: center; padding: 20px 10px;
-      min-height: 80vh; box-sizing: border-box;
+      align-items: center; padding: 20px 10px 10px;
+      box-sizing: border-box;
     }
 
     /* Progress bar */
@@ -82,6 +82,12 @@
       background: #1a237e !important; color: white !important;
       transform: translateY(-3px) !important;
       box-shadow: 0 6px 18px rgba(26,35,126,0.3) !important;
+    }
+    /* Reset focus style so tapped button doesn't stay blue on next trial */
+    .jspsych-btn:focus {
+      background: white !important; color: #1a237e !important;
+      outline: none !important; transform: none !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
     }
     .nav-btn {
       background: #1a237e !important; color: white !important;
