@@ -276,6 +276,8 @@ function makeTrialNode(t) {
       data.response_col = data.response + 1; // response is 0-indexed
       data.correct      = data.response_col === data.correct_col;
       data.rt_sec       = (data.rt / 1000).toFixed(3);
+      // Remove focus from any button so it doesn't appear selected on the next trial
+      if (document.activeElement) document.activeElement.blur();
     }
   };
 }
