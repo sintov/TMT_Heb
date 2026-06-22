@@ -222,7 +222,7 @@ function addStartEndLabels(targets, lastLabel) {
     // Scale: canvas internal coords → CSS pixels
     const scaleX = canvas.offsetWidth  / canvas.width;
     const scaleY = canvas.offsetHeight / canvas.height;
-    const circleR = 24; // plugin circle radius in canvas coords
+    const circleR = 38; // plugin circle radius in canvas coords
 
     [['1', 'התחלה', '#2e7d32'], [lastLabel, 'סוף', '#c62828']].forEach(([lbl, text, color]) => {
       const t = targets.find(t => t.label === lbl);
@@ -244,9 +244,26 @@ function addStartEndLabels(targets, lastLabel) {
   }, 80);
 }
 
-function makeTmt(prompt, phase, part, customTargets, lastLabel) {
+function startCountdown(seconds) {
+  const timerEl = document.createElement('div');
+  timerEl.style.cssText = 'text-align:center;font-size:20px;font-weight:bold;margin:4px 0 6px;';
+  const canvas = document.querySelector('canvas');
+  if (canvas) canvas.before(timerEl); else return;
+
+  let remaining = seconds;
+  const tick = () => {
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    timerEl.textContent = `⏱ ${m > 0 ? m + ':' + String(s).padStart(2,'0') : s + ' שניות'}`;
+    timerEl.style.color = remaining <= 10 ? '#c62828' : '#555';
+    if (remaining-- > 0) setTimeout(tick, 1000);
+  };
+  tick();
+}
+
+function makeTmt(prompt, phase, part, customTargets, lastLabel, timeLimitSec) {
   const [cw, ch] = getCanvasDimensions();
-  return {
+  const trial = {
     type: jsPsychTrailMaking,
     prompt: `<p style="font-size:17px;text-align:center;margin:10px 0;">${prompt}</p>`,
     canvas_size: [cw, ch],
@@ -254,19 +271,22 @@ function makeTmt(prompt, phase, part, customTargets, lastLabel) {
     data: { phase, part },
     on_load: function() {
       if (lastLabel && customTargets) addStartEndLabels(customTargets, lastLabel);
+      if (timeLimitSec) startCountdown(timeLimitSec);
     }
   };
+  if (timeLimitSec) trial.trial_duration = timeLimitSec * 1000;
+  return trial;
 }
 
 const welcome = makeInstr(`<div class="instruction-box"><h2>מבחן חיבור עיגולים</h2><p>ברוך/ה הבא/ה למבחן.</p><p>המבחן מורכב משני חלקים:</p><p><b>חלק א׳</b> – חיבור מספרים לפי הסדר (1, 2, 3...)<br><b>חלק ב׳</b> – חיבור מספרים ואותיות עברית לסירוגין (1, א, 2, ב...)</p><p>לפני כל חלק יש <b>תרגול קצר</b> שיעזור לך להבין את המשימה.</p><p style="color:#c62828;">⏱ הזמן נמדד – פעל/י מהר ככל האפשר מבלי לטעות.</p></div>`);
 const instrAPractice = makeInstr(`<div class="instruction-box"><span class="badge">חלק א׳ – תרגול</span><h2>חיבור מספרים</h2><p>לחץ/י על המספרים <b>לפי הסדר</b> מהקטן לגדול:</p><div class="example">1 ← 2 ← 3 ← 4 ← 5</div><p>התחל/י מ-<b>1</b> וסיים/י בגבוה ביותר.</p></div>`);
 const tmtAPractice = makeTmt('תרגול א׳ – חבר/י את המספרים לפי הסדר', 'practice', 'A', buildATargets(5), '5');
 const instrAReal = makeInstr(`<div class="instruction-box"><span class="badge">חלק א׳ – מבחן אמיתי</span><h2>חיבור מספרים</h2><p>כעת תתחיל/י את המבחן האמיתי – <b>25 מספרים</b>.</p><p>חבר/י את המספרים לפי הסדר מ-1 עד 25.</p><div class="example">1 ← 2 ← 3 ← ... ← 25</div><p style="color:#c62828;">⏱ הזמן יימדד מרגע שתלחץ/י "המשך".</p></div>`);
-const tmtAReal = makeTmt('חלק א׳ – חבר/י מספרים לפי הסדר (1 ← 2 ← ... ← 25)', 'real', 'A', buildATargets(25), '25');
+const tmtAReal = makeTmt('חלק א׳ – חבר/י מספרים לפי הסדר (1 ← 2 ← ... ← 25)', 'real', 'A', buildATargets(25), '25', 100);
 const instrBPractice = makeInstr(`<div class="instruction-box"><span class="badge">חלק ב׳ – תרגול</span><h2>חיבור מספרים ואותיות לסירוגין</h2><p>כעת יש לחבר <b>מספר ואחריו אות עברית</b> לסירוגין:</p><div class="example">1 ← א ← 2 ← ב ← 3 ← ג ← 4 ← ד</div><p>הסדר הוא: <b>מספר → אות → מספר → אות...</b></p></div>`);
 const tmtBPractice = makeTmt('תרגול ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'practice', 'B', buildBTargets(4), 'ד');
 const instrBReal = makeInstr(`<div class="instruction-box"><span class="badge">חלק ב׳ – מבחן אמיתי</span><h2>חיבור מספרים ואותיות לסירוגין</h2><p>כעת תתחיל/י את המבחן האמיתי.</p><div class="example">1 ← א ← 2 ← ב ← 3 ← ג ← ...</div><p>המשך/י עד לסוף הרצף.</p><p style="color:#c62828;">⏱ הזמן יימדד מרגע שתלחץ/י "המשך".</p></div>`);
-const tmtBReal = makeTmt('חלק ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'real', 'B', buildBTargets(13, true), '13');
+const tmtBReal = makeTmt('חלק ב׳ – חבר/י לסירוגין: 1 ← א ← 2 ← ב ← ...', 'real', 'B', buildBTargets(13, true), '13', 300);
 
 jsPsych.run([welcome, instrAPractice, tmtAPractice, instrAReal, tmtAReal, instrBPractice, tmtBPractice, instrBReal, tmtBReal]);
 </script>
