@@ -149,62 +149,26 @@
 <script>
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwOIbNTSDocxEcQQ4n2RyTTCHMz-fFrK57UNW6SV1JKGNOY4Oc6gx69J8KytNvAxZTz/exec';
 
-// ── SVG Symbols (complex line-drawn shapes) ──
-const SVG = {
-  // Circle with vertical + horizontal cross (phi-like)
-  A: `<svg viewBox="0 0 60 60" width="52" height="52" stroke="#000" stroke-width="2.5" fill="none">
-        <circle cx="30" cy="28" r="16"/>
-        <line x1="30" y1="8" x2="30" y2="48"/>
-        <line x1="14" y1="28" x2="46" y2="28"/>
-      </svg>`,
-  // Arch / semicircle with base line
-  B: `<svg viewBox="0 0 60 60" width="52" height="52" stroke="#000" stroke-width="2.5" fill="none">
-        <path d="M12 44 Q12 14 30 14 Q48 14 48 44"/>
-        <line x1="8"  y1="44" x2="52" y2="44"/>
-      </svg>`,
-  // Three circles on a horizontal line
-  C: `<svg viewBox="0 0 60 60" width="52" height="52" stroke="#000" stroke-width="2.5" fill="none">
-        <line x1="6" y1="30" x2="54" y2="30"/>
-        <circle cx="14" cy="30" r="7"/>
-        <circle cx="30" cy="30" r="7"/>
-        <circle cx="46" cy="30" r="7"/>
-      </svg>`,
-  // Y-branch (fork) with small circles at tips
-  D: `<svg viewBox="0 0 60 60" width="52" height="52" stroke="#000" stroke-width="2.5" fill="none">
-        <line x1="30" y1="50" x2="30" y2="30"/>
-        <line x1="30" y1="30" x2="14" y2="14"/>
-        <line x1="30" y1="30" x2="46" y2="14"/>
-        <circle cx="14" cy="12" r="5"/>
-        <circle cx="46" cy="12" r="5"/>
-      </svg>`,
-  // Diamond with vertical line through it
-  E: `<svg viewBox="0 0 60 60" width="52" height="52" stroke="#000" stroke-width="2.5" fill="none">
-        <polygon points="30,8 50,30 30,52 10,30"/>
-        <line x1="30" y1="8" x2="30" y2="52"/>
-      </svg>`,
-  // T-shape (vertical bar + horizontal top)
-  F: `<svg viewBox="0 0 60 60" width="52" height="52" stroke="#000" stroke-width="2.5" fill="none">
-        <line x1="10" y1="14" x2="50" y2="14"/>
-        <line x1="30" y1="14" x2="30" y2="50"/>
-      </svg>`,
-  // Hourglass / bowtie
-  G: `<svg viewBox="0 0 60 60" width="52" height="52" stroke="#000" stroke-width="2.5" fill="none">
-        <polygon points="10,10 50,10 30,30"/>
-        <polygon points="10,50 50,50 30,30"/>
-      </svg>`,
-  // Circle with small circle on top
-  H: `<svg viewBox="0 0 60 60" width="52" height="52" stroke="#000" stroke-width="2.5" fill="none">
-        <circle cx="30" cy="36" r="16"/>
-        <circle cx="30" cy="13" r="7"/>
-        <line x1="30" y1="20" x2="30" y2="20"/>
-      </svg>`,
-  // Arrow pointing right with tail
-  I: `<svg viewBox="0 0 60 60" width="52" height="52" stroke="#000" stroke-width="2.5" fill="none">
-        <line x1="8"  y1="30" x2="44" y2="30"/>
-        <polyline points="32,18 48,30 32,42"/>
-        <line x1="8" y1="22" x2="8" y2="38"/>
-      </svg>`
-};
+// ── TMB Symbols — randomly pick 9 from 30 each session ──
+function symImg(n, size) {
+  size = size || 52;
+  return `<img src="images/${n}.png" width="${size}" height="${size}" style="object-fit:contain;" draggable="false">`;
+}
+
+// Shuffle and pick 9 random symbol numbers from 1–30
+function pickSymbols() {
+  const pool = Array.from({length: 30}, (_, i) => i + 1);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 9);
+}
+
+const chosenNums = pickSymbols(); // e.g. [14, 3, 27, 9, 1, 22, 6, 18, 11]
+const SYMBOL_KEYS_ORDERED = ['A','B','C','D','E','F','G','H','I'];
+const SVG = {};
+SYMBOL_KEYS_ORDERED.forEach((key, i) => { SVG[key] = symImg(chosenNums[i]); });
 
 const SYMBOL_KEYS = Object.keys(SVG); // ['A','B','C','D','E','F','G','H','I']
 
@@ -334,6 +298,9 @@ const jsPsych = initJsPsych({
       hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
 
+    const recruitTrial = jsPsych.data.get().filter({ phase: 'recruitment' }).values()[0];
+    const wantsMore = recruitTrial?.wants_more_research || '';
+
     // Save only one summary row per participant
     const rows = [{
       subject_id:    real[0]?.subject_id || 'anonymous',
@@ -343,7 +310,9 @@ const jsPsych = initJsPsych({
       num_errors:    numErrors,
       accuracy_pct:  accuracy,
       avg_rt_seconds: avgRtSec,
-      total_rt_seconds: totalRtSec
+      total_rt_seconds: totalRtSec,
+      wants_more_research: wantsMore,
+      symbols_used: chosenNums.join(',')
     }];
 
     try {
@@ -426,6 +395,25 @@ timeline.push(makeInstr(`
 
 // Real trials
 generateTrials(90, 'real').forEach(t => timeline.push(makeTrialNode(t)));
+
+// Recruitment screen
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `
+    <div class="instruction-box" style="text-align:center; direction:rtl;">
+      <h2>להשתתפות בהמשך המחקר באוניברסיטת רייכמן וקבלת משוב:</h2>
+      <p style="font-size:14px; color:#666; margin-top:18px; line-height:1.8;">
+        המשך המחקר יכלול מבדקים קוגנטיבים נוספים<br>
+        (פנים אל פנים או זום) ומבדקי דימות (EEG או fMRI)
+      </p>
+    </div>`,
+  choices: ['כן, אני מעוניין/ת', 'לא תודה'],
+  button_html: (choice, i) => `<button class="jspsych-btn" style="${i === 0 ? 'background:#1a237e!important;color:white!important;' : ''}">${choice}</button>`,
+  data: { phase: 'recruitment' },
+  on_finish: function(data) {
+    data.wants_more_research = data.response === 0 ? 'yes' : 'no';
+  }
+});
 
 jsPsych.run(timeline);
 </script>
