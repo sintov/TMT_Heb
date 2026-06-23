@@ -107,6 +107,26 @@
 
     .saving-msg { text-align: center; font-size: 20px; margin-top: 80px; color: #1a237e; }
 
+    /* Debrief text below recruitment buttons */
+    .debrief-box {
+      max-width: 640px; width: calc(100% - 32px);
+      margin: 0 auto 20px; padding: 16px 20px;
+      background: #f8f9ff; border-radius: 12px;
+      border: 1px solid #e0e3f0;
+      text-align: right; direction: rtl;
+      box-sizing: border-box;
+    }
+    .debrief-box p {
+      font-size: 12px; line-height: 1.8; color: #555;
+      margin: 0 0 10px;
+    }
+    .debrief-box p:last-child { margin-bottom: 0; }
+    .debrief-box a { color: #1a237e; }
+    @media (max-width: 600px) {
+      .debrief-box { padding: 12px 14px; width: calc(100% - 20px); }
+      .debrief-box p { font-size: 11px; line-height: 1.7; }
+    }
+
     /* Recruitment yes/no buttons */
     .recruit-btn {
       border-radius: 12px !important; padding: 14px 28px !important;
@@ -167,7 +187,7 @@
 </head>
 <body>
 <script>
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwOIbNTSDocxEcQQ4n2RyTTCHMz-fFrK57UNW6SV1JKGNOY4Oc6gx69J8KytNvAxZTz/exec';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwBuRKEqoBiby5TmE9cDIcT7MALWZMJrlhSEfkzC8mth9Y8B3XZoSvlITqqNBG8KCEz/exec';
 
 // ── TMB Symbols — randomly pick 9 from 30 each session ──
 function symImg(n, size) {
@@ -423,12 +443,20 @@ generateTrials(90, 'real').forEach(t => timeline.push(makeTrialNode(t)));
 timeline.push({
   type: jsPsychHtmlButtonResponse,
   stimulus: `
-    <div class="instruction-box" style="text-align:center; direction:rtl;">
-      <h2>להשתתפות בהמשך המחקר באוניברסיטת רייכמן וקבלת משוב:</h2>
-      <p style="font-size:14px; color:#666; margin-top:18px; line-height:1.8;">
-        המשך המחקר יכלול מבדקים קוגנטיבים נוספים<br>
-        (פנים אל פנים או זום) ומבדקי דימות (EEG או fMRI)
+    <div class="instruction-box" style="direction:rtl; text-align:right;">
+      <h2 style="text-align:center;">להשתתפות בהמשך המחקר באוניברסיטת רייכמן וקבלת משוב:</h2>
+      <p style="font-size:13px; color:#555; margin:12px 0 0; line-height:1.7; text-align:center;">
+        המשך המחקר יכלול מבדקים קוגנטיבים נוספים (פנים אל פנים או זום) ומבדקי דימות (EEG או fMRI)
       </p>
+    </div>
+    <div class="debrief-box">
+      <p>תודה רבה על השתתפותך במחקר.</p>
+      <p>מטרת מחקר זה היא לבחון את השינויים הקוגניטיביים (כגון זיכרון, קשב, ריכוז ומהירות עיבוד מידע) המתרחשים בתקופת גיל המעבר, ואת הקשר בינם לבין תסמיני גיל המעבר וטיפול הורמונלי חליפי (HRT). במסגרת שלב זה של המחקר נאספים נתונים באמצעות שאלונים ומבחנים קוגניטיביים מקוונים, במטרה להבין טוב יותר את החוויה הקוגניטיבית של נשים בגילאי 40–60 ואת הגורמים המשפיעים עליה.</p>
+      <p>מחקרים קודמים מצביעים על כך שנשים רבות חוות בתקופת גיל המעבר שינויים בזיכרון, בריכוז ובתחושת ה"ערפול המחשבתי" (brain fog). מחקריה של ד"ר ליסה מוסקוני ועמיתיה הראו כי תקופת המעבר מלווה בשינויים ביולוגיים ותפקודיים במוח, לרבות שינויים במטבוליזם המוחי, בקישוריות עצבית ובמדדים הקשורים לבריאות המוח, אשר עשויים להיות קשורים לתסמינים הקוגניטיביים המדווחים על ידי נשים בתקופה זו (Mosconi et al., 2021a; Mosconi et al., 2021b). עם זאת, עדיין לא ברור כיצד שינויים אלו קשורים לביצועים קוגניטיביים בפועל וכיצד טיפול הורמונלי עשוי להשפיע עליהם. המחקר הנוכחי נועד לתרום להבנה טובה יותר של סוגיות אלו.</p>
+      <p>שלב זה מהווה את החלק הראשון של המחקר. בהמשך, חלק מהמשתתפות עשויות להיות מוזמנות להשתתף בשלב נוסף הכולל הערכה מעמיקה יותר של תפקודי המוח באמצעות שיטות מחקר מתקדמות כגון EEG או fMRI, בהתאם להתאמתן ולרצונן להשתתף.</p>
+      <p>לא יימסר למשתתפות משוב אישי או אבחנה רפואית על סמך תוצאות השאלונים או המבחנים הקוגניטיביים, והנתונים ישמשו לצורכי מחקר בלבד.</p>
+      <p>אם יש לך שאלות בנוגע למחקר או אם ברצונך לקבל מידע נוסף, ניתן ליצור קשר עם צוות המחקר באמצעות דוא"ל: <a href="mailto:daphna.israeli@post.runi.ac.il">daphna.israeli@post.runi.ac.il</a></p>
+      <p>תודה לך על הזמן שהקדשת ועל תרומתך לקידום הידע המדעי בתחום בריאות המוח והקוגניציה בגיל המעבר.</p>
     </div>`,
   choices: ['כן, אני מעוניין/ת', 'לא תודה'],
   button_html: (choice, i) => `<button class="recruit-btn ${i === 0 ? 'recruit-btn-yes' : 'recruit-btn-no'}">${choice}</button>`,
