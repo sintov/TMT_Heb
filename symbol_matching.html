@@ -448,7 +448,10 @@ timeline.push({
       <p style="font-size:13px; color:#555; margin:12px 0 0; line-height:1.7; text-align:center;">
         המשך המחקר יכלול מבדקים קוגנטיבים נוספים (פנים אל פנים או זום) ומבדקי דימות (EEG או fMRI)
       </p>
-    </div>
+    </div>`,
+  choices: ['כן, אני מעוניין/ת', 'לא תודה'],
+  button_html: (choice, i) => `<button class="recruit-btn ${i === 0 ? 'recruit-btn-yes' : 'recruit-btn-no'}">${choice}</button>`,
+  prompt: `
     <div class="debrief-box">
       <p>תודה רבה על השתתפותך במחקר.</p>
       <p>מטרת מחקר זה היא לבחון את השינויים הקוגניטיביים (כגון זיכרון, קשב, ריכוז ומהירות עיבוד מידע) המתרחשים בתקופת גיל המעבר, ואת הקשר בינם לבין תסמיני גיל המעבר וטיפול הורמונלי חליפי (HRT). במסגרת שלב זה של המחקר נאספים נתונים באמצעות שאלונים ומבחנים קוגניטיביים מקוונים, במטרה להבין טוב יותר את החוויה הקוגניטיבית של נשים בגילאי 40–60 ואת הגורמים המשפיעים עליה.</p>
@@ -458,8 +461,6 @@ timeline.push({
       <p>אם יש לך שאלות בנוגע למחקר או אם ברצונך לקבל מידע נוסף, ניתן ליצור קשר עם צוות המחקר באמצעות דוא"ל: <a href="mailto:daphna.israeli@post.runi.ac.il">daphna.israeli@post.runi.ac.il</a></p>
       <p>תודה לך על הזמן שהקדשת ועל תרומתך לקידום הידע המדעי בתחום בריאות המוח והקוגניציה בגיל המעבר.</p>
     </div>`,
-  choices: ['כן, אני מעוניין/ת', 'לא תודה'],
-  button_html: (choice, i) => `<button class="recruit-btn ${i === 0 ? 'recruit-btn-yes' : 'recruit-btn-no'}">${choice}</button>`,
   data: { phase: 'recruitment' },
   on_finish: function(data) {
     data.wants_more_research = data.response === 0 ? 'yes' : 'no';
